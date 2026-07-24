@@ -1,194 +1,185 @@
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
+const PAGE_SIZE = 30;
 
-const translations = {
-  en: {
-    heroTitle: "Build enterprise mobility solutions with Urovo.",
-    heroText: "Search the complete USDK interface reference, review parameters and return values, and share a direct link to any API.",
-    searchButton: "Search",
-    browseTitle: "One technical portal, built to grow.",
-    browseText: "USDK is available now. The remaining categories are ready for your next content batches.",
-  },
-  zh: {
-    heroTitle: "用优博讯构建企业移动解决方案。",
-    heroText: "搜索完整 USDK 接口，查看参数与返回值，并把任意 API 的直达链接分享给客户或研发团队。",
-    searchButton: "搜索",
-    browseTitle: "一个持续扩展的技术资料入口。",
-    browseText: "USDK 内容现已可用，其余分类可随下一批资料直接加入。",
-  },
+const state = {
+  entries: [],
+  filtered: [],
+  module: "",
+  query: "",
+  visible: PAGE_SIZE,
 };
 
-let language = localStorage.getItem("urovo-kb-language") || "en";
+const params = new URLSearchParams(location.search);
+const searchInput = $("#manual-search-input");
+const grid = $("#api-card-grid");
 
-function applyLanguage() {
-  document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
-  $$("[data-i18n]").forEach((node) => {
-    const value = translations[language][node.dataset.i18n];
-    if (value) node.textContent = value;
-  });
-  $$("[data-language-toggle]").forEach((button) => {
-    button.textContent = language === "zh" ? "EN" : "中文";
-  });
-}
-
-$$("[data-language-toggle]").forEach((button) => {
-  button.addEventListener("click", () => {
-    language = language === "en" ? "zh" : "en";
-    localStorage.setItem("urovo-kb-language", language);
-    applyLanguage();
-  });
-});
-applyLanguage();
-
-if (document.body.classList.contains("knowledge-page")) {
-  const state = { entries: [], filtered: [], selectedId: "" };
-  const searchInput = $("#kb-search-input");
-  const moduleFilter = $("#module-filter");
-  const statusFilter = $("#status-filter");
-  const list = $("#api-list");
-  const detail = $("#detail-panel");
-  const params = new URLSearchParams(location.search);
-
-  const escapeHtml = (value = "") => String(value).replace(/[&<>"']/g, (char) => ({
+function escapeHtml(value = "") {
+  return String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
   }[char]));
+}
 
-  function showToast(message) {
-    const toast = $("#toast");
-    toast.textContent = message;
-    toast.classList.add("show");
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => toast.classList.remove("show"), 1600);
-  }
+function showToast(message) {
+  const toast = $("#toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 1500);
+}
 
-  function updateUrl(entry, replace = false) {
-    const url = new URL(location.href);
-    if (entry) url.searchParams.set("id", entry.id);
-    else url.searchParams.delete("id");
-    if (searchInput.value) url.searchParams.set("q", searchInput.value);
-    else url.searchParams.delete("q");
-    if (moduleFilter.value) url.searchParams.set("module", moduleFilter.value);
-    else url.searchParams.delete("module");
-    const method = replace ? "replaceState" : "pushState";
-    history[method]({}, "", url);
-  }
+function syncUrl() {
+  const url = new URL(location.href);
+  state.query ? url.searchParams.set("q", state.query) : url.searchParams.delete("q");
+  state.module ? url.searchParams.set("module", state.module) : url.searchParams.delete("module");
+  history.replaceState({}, "", url);
+}
 
-  function renderList() {
-    const query = searchInput.value.trim().toLowerCase();
-    state.filtered = state.entries.filter((entry) => {
-      const haystack = [entry.title, entry.module, entry.summary, entry.signature, entry.keywords].join(" ").toLowerCase();
-      return (!query || haystack.includes(query))
-        && (!moduleFilter.value || entry.module === moduleFilter.value)
-        && (!statusFilter.value || entry.status === statusFilter.value);
-    });
-    const selectionChanged = !state.filtered.some((entry) => entry.id === state.selectedId);
-    if (selectionChanged) state.selectedId = state.filtered[0]?.id || "";
-    $("#result-count").textContent = `${state.filtered.length} of ${state.entries.length} interfaces`;
-    list.innerHTML = state.filtered.map((entry) => `
-      <button class="api-item ${entry.id === state.selectedId ? "selected" : ""}" type="button"
-        data-id="${escapeHtml(entry.id)}" role="option" aria-selected="${entry.id === state.selectedId}">
-        <span class="api-item-top"><strong>${escapeHtml(entry.title)}</strong>
-          <span class="badge ${entry.status === "Deprecated" ? "deprecated" : ""}">${escapeHtml(entry.status)}</span>
-        </span>
-        <span class="api-item-meta">${escapeHtml(entry.module)}</span>
-        <p>${escapeHtml(entry.summary || entry.signature || "USDK interface")}</p>
-      </button>`).join("");
-    $("#empty-state").hidden = state.filtered.length > 0;
-    $$(".api-item", list).forEach((button) => {
-      button.addEventListener("click", () => selectEntry(button.dataset.id));
-    });
-    if (selectionChanged && state.selectedId) selectEntry(state.selectedId, false);
-    updateUrl(state.entries.find((entry) => entry.id === state.selectedId), true);
-  }
+function renderParameters(parameters) {
+  if (!parameters?.length) return `<div class="card-note">No parameters.</div>`;
+  return `<div class="parameter-list">${parameters.map((parameter) => `
+    <div class="parameter-row">
+      <code>${escapeHtml(parameter.name || "—")}</code>
+      <p>${escapeHtml(parameter.description || "").replace(/\n/g, "<br>")}</p>
+    </div>`).join("")}</div>`;
+}
 
-  function selectEntry(id, push = true) {
-    const entry = state.entries.find((item) => item.id === id);
-    if (!entry) return;
-    state.selectedId = id;
-    $$(".api-item", list).forEach((item) => {
-      const selected = item.dataset.id === id;
-      item.classList.toggle("selected", selected);
-      item.setAttribute("aria-selected", selected);
-    });
-    const parameters = entry.parameters?.length
-      ? `<table class="parameter-table"><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody>
-        ${entry.parameters.map((item) => `<tr><td><code>${escapeHtml(item.name || "—")}</code></td><td>${escapeHtml(item.description).replace(/\n/g, "<br>")}</td></tr>`).join("")}
-        </tbody></table>`
-      : `<div class="return-box">No parameters.</div>`;
-    detail.innerHTML = `<div class="detail-content">
-      <button class="mobile-back" type="button" id="mobile-back">← API list</button>
-      <div class="breadcrumbs">USDK API&nbsp; / &nbsp;${escapeHtml(entry.module)}&nbsp; / &nbsp;V15.5.01E</div>
-      <div class="detail-title-row"><h1>${escapeHtml(entry.title)}</h1><button class="copy-link" type="button" id="copy-link">Copy link</button></div>
-      <p class="detail-summary">${escapeHtml(entry.summary || "No description provided.")}</p>
-      <section class="detail-section"><h2>Definition</h2>
-        <pre class="code-block"><code>${escapeHtml(entry.signature || entry.title)}</code><button class="copy-code" type="button" id="copy-code">Copy</button></pre>
-      </section>
-      <section class="detail-section"><h2>Parameters</h2>${parameters}</section>
-      <section class="detail-section"><h2>Return value</h2><div class="return-box">${escapeHtml(entry.returns || "No return value documented.")}</div></section>
-      <div class="detail-meta"><span>Status: <strong>${escapeHtml(entry.status)}</strong></span><span>Module: ${escapeHtml(entry.module)}</span><span>Source: ${escapeHtml(entry.source)}</span></div>
-    </div>`;
-    detail.classList.add("mobile-open");
-    $("#copy-link").addEventListener("click", async () => {
-      await navigator.clipboard.writeText(location.href);
-      showToast("API link copied");
-    });
-    $("#copy-code").addEventListener("click", async () => {
-      await navigator.clipboard.writeText(entry.signature || entry.title);
+function apiCard(entry) {
+  return `<article class="manual-api-card" id="${escapeHtml(entry.id)}" data-id="${escapeHtml(entry.id)}">
+    <div class="card-heading">
+      <div>
+        <h2>${escapeHtml(entry.title)}</h2>
+        <span class="module-badge">${escapeHtml(entry.module)}</span>
+      </div>
+      <span class="status-badge ${entry.status === "Deprecated" ? "deprecated" : ""}">${escapeHtml(entry.status)}</span>
+    </div>
+    <p class="card-summary">${escapeHtml(entry.summary || "No description provided.")}</p>
+    <div class="card-label">Definition</div>
+    <pre class="signature-block"><code>${escapeHtml(entry.signature || entry.title)}</code><button type="button" data-copy-signature="${escapeHtml(entry.id)}">Copy</button></pre>
+    <details class="card-details" ${entry.parameters?.length ? "" : "open"}>
+      <summary>Parameters <span>${entry.parameters?.length || 0}</span></summary>
+      ${renderParameters(entry.parameters)}
+    </details>
+    <div class="card-label">Return value</div>
+    <div class="return-value">${escapeHtml(entry.returns || "No return value documented.").replace(/\n/g, "<br>")}</div>
+    <div class="card-actions">
+      <button type="button" data-copy-link="${escapeHtml(entry.id)}">Copy API link</button>
+      <span>USDK ${escapeHtml(entry.version || "V15.5.01E")}</span>
+    </div>
+  </article>`;
+}
+
+function bindCardActions() {
+  $$("[data-copy-signature]", grid).forEach((button) => {
+    button.addEventListener("click", async () => {
+      const entry = state.entries.find((item) => item.id === button.dataset.copySignature);
+      await navigator.clipboard.writeText(entry?.signature || entry?.title || "");
       showToast("Definition copied");
     });
-    $("#mobile-back").addEventListener("click", () => detail.classList.remove("mobile-open"));
-    if (push) updateUrl(entry);
-  }
-
-  function clearFilters() {
-    searchInput.value = "";
-    moduleFilter.value = "";
-    statusFilter.value = "";
-    renderList();
-  }
-
-  fetch("public/knowledge.json")
-    .then((response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    })
-    .then((data) => {
-      state.entries = data.entries;
-      $("#usdk-count").textContent = data.entries.length;
-      [...new Set(data.entries.map((entry) => entry.module))].sort().forEach((module) => {
-        const option = document.createElement("option");
-        option.value = module;
-        option.textContent = module;
-        moduleFilter.append(option);
-      });
-      searchInput.value = params.get("q") || "";
-      moduleFilter.value = params.get("module") || "";
-      renderList();
-      const requestedId = params.get("id");
-      if (requestedId) selectEntry(requestedId, false);
-      else if (state.filtered.length) selectEntry(state.filtered[0].id, false);
-    })
-    .catch((error) => {
-      $("#result-count").textContent = "Unable to load knowledge data";
-      detail.innerHTML = `<div class="detail-placeholder"><span class="placeholder-mark">!</span><h2>Data could not be loaded</h2><p>Run this site through a local or hosted web server. Details: ${escapeHtml(error.message)}</p></div>`;
-    });
-
-  searchInput.addEventListener("input", renderList);
-  moduleFilter.addEventListener("change", renderList);
-  statusFilter.addEventListener("change", renderList);
-  $("#clear-filters").addEventListener("click", clearFilters);
-  $("#mobile-filters").addEventListener("click", () => $("#filters").classList.toggle("open"));
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "/" && document.activeElement !== searchInput) {
-      event.preventDefault();
-      searchInput.focus();
-    }
-    if (event.key === "Escape" && detail.classList.contains("mobile-open")) {
-      detail.classList.remove("mobile-open");
-    }
   });
-  window.addEventListener("popstate", () => {
-    const current = new URLSearchParams(location.search).get("id");
-    if (current) selectEntry(current, false);
+  $$("[data-copy-link]", grid).forEach((button) => {
+    button.addEventListener("click", async () => {
+      const url = new URL(location.href);
+      url.searchParams.set("id", button.dataset.copyLink);
+      await navigator.clipboard.writeText(url.toString());
+      showToast("API link copied");
+    });
   });
 }
+
+function applyFilters(resetVisible = true) {
+  if (resetVisible) state.visible = PAGE_SIZE;
+  const query = state.query.trim().toLowerCase();
+  state.filtered = state.entries.filter((entry) => {
+    const content = [
+      entry.title, entry.module, entry.summary, entry.signature, entry.returns, entry.keywords,
+      ...(entry.parameters || []).flatMap((item) => [item.name, item.description]),
+    ].join(" ").toLowerCase();
+    return (!state.module || entry.module === state.module) && (!query || content.includes(query));
+  });
+  renderCards();
+  syncUrl();
+}
+
+function renderCards() {
+  const visibleEntries = state.filtered.slice(0, state.visible);
+  grid.innerHTML = visibleEntries.map(apiCard).join("");
+  bindCardActions();
+  $("#manual-result-count").textContent = `${state.filtered.length} matching APIs`;
+  $("#manual-empty").hidden = state.filtered.length > 0;
+  const loadMore = $("#load-more");
+  loadMore.hidden = state.visible >= state.filtered.length;
+  if (!loadMore.hidden) loadMore.textContent = `Load ${Math.min(PAGE_SIZE, state.filtered.length - state.visible)} more APIs`;
+}
+
+function buildModuleChips() {
+  const modules = [...new Set(state.entries.map((entry) => entry.module))];
+  $("#module-chips").insertAdjacentHTML("beforeend", modules.map((module) => {
+    const count = state.entries.filter((entry) => entry.module === module).length;
+    return `<button class="module-chip" type="button" data-module="${escapeHtml(module)}">${escapeHtml(module)} <b>${count}</b></button>`;
+  }).join(""));
+  $$(".module-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.module = button.dataset.module;
+      $$(".module-chip").forEach((item) => item.classList.toggle("active", item === button));
+      applyFilters();
+    });
+  });
+}
+
+fetch("public/knowledge.json")
+  .then((response) => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  })
+  .then((data) => {
+    state.entries = data.entries;
+    $("#entry-total").textContent = data.entries.length;
+    state.query = params.get("q") || "";
+    state.module = params.get("module") || "";
+    searchInput.value = state.query;
+    buildModuleChips();
+    const activeChip = $(`.module-chip[data-module="${CSS.escape(state.module)}"]`) || $('.module-chip[data-module=""]');
+    $$(".module-chip").forEach((button) => button.classList.toggle("active", button === activeChip));
+
+    const targetId = params.get("id");
+    if (targetId) {
+      const target = state.entries.find((entry) => entry.id === targetId);
+      if (target) {
+        state.module = target.module;
+        state.visible = state.entries.filter((entry) => entry.module === target.module).findIndex((entry) => entry.id === targetId) + PAGE_SIZE;
+        $$(".module-chip").forEach((button) => button.classList.toggle("active", button.dataset.module === target.module));
+      }
+    }
+    applyFilters(!targetId);
+    if (targetId) requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  })
+  .catch((error) => {
+    $("#manual-result-count").textContent = "Knowledge data could not be loaded";
+    grid.innerHTML = `<div class="manual-load-error"><strong>Unable to load API data</strong><p>Serve this folder through GitHub Pages or another web server.</p><code>${escapeHtml(error.message)}</code></div>`;
+  });
+
+searchInput.addEventListener("input", () => {
+  state.query = searchInput.value;
+  applyFilters();
+});
+
+$("#reset-manual-filters").addEventListener("click", () => {
+  state.query = "";
+  state.module = "";
+  searchInput.value = "";
+  $$(".module-chip").forEach((button) => button.classList.toggle("active", button.dataset.module === ""));
+  applyFilters();
+});
+
+$("#load-more").addEventListener("click", () => {
+  state.visible += PAGE_SIZE;
+  renderCards();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "/" && document.activeElement !== searchInput) {
+    event.preventDefault();
+    searchInput.focus();
+  }
+});

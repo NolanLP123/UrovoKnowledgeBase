@@ -3,83 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Urovo USDK API and enterprise device management documentation.">
-  <title>Urovo Technical Knowledge Base</title>
+  <meta name="description" content="Urovo USDK API quick reference.">
+  <meta name="theme-color" content="#0b1220">
+  <title>Urovo USDK Knowledge Base</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="landing">
-  <header class="site-header">
-    <a class="brand" href="index.html" aria-label="Urovo Technical Knowledge Base home">
-      <span class="brand-mark">U</span>
-      <span><strong>UROVO</strong><small>Developer Resources</small></span>
-    </a>
-    <div class="header-actions">
-      <button class="language-button" type="button" data-language-toggle>中文</button>
-      <a class="header-link" href="kb.html">API Reference <span aria-hidden="true">→</span></a>
+<body class="manual-page">
+  <header class="manual-hero">
+    <div class="manual-shell">
+      <div class="manual-brand-row">
+        <a class="manual-brand" href="index.html">
+          <span class="manual-logo">U</span>
+          <span><strong>Urovo USDK Knowledge Base</strong><small>USDK Interface Quick Reference</small></span>
+        </a>
+        <span class="version-pill">V15.5.01E</span>
+      </div>
+      <div class="manual-stats">
+        <span><b id="entry-total">395</b> APIs</span>
+        <span><b>4</b> modules</span>
+        <span>Static · Shareable</span>
+      </div>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">USDK · V15.5.01E</span>
-        <h1 data-i18n="heroTitle">Build enterprise mobility solutions with Urovo.</h1>
-        <p data-i18n="heroText">Search the complete USDK interface reference, review parameters and return values, and share a direct link to any API.</p>
-        <form class="hero-search" action="kb.html" method="get">
-          <label class="sr-only" for="home-search">Search APIs</label>
-          <span class="search-icon" aria-hidden="true"></span>
-          <input id="home-search" name="q" type="search" placeholder="Search APIs, modules, descriptions…" autocomplete="off">
-          <button type="submit" data-i18n="searchButton">Search</button>
-        </form>
-        <div class="hero-meta">
-          <span><strong>395</strong> USDK APIs</span>
-          <span><strong>4</strong> modules</span>
-          <span>Static hosting ready</span>
+    <section class="manual-controls">
+      <div class="manual-shell">
+        <label class="manual-search" for="manual-search-input">
+          <span>Search</span>
+          <input id="manual-search-input" type="search" placeholder="API name, signature, description…" autocomplete="off">
+          <kbd>/</kbd>
+        </label>
+        <div class="module-chips" id="module-chips" aria-label="Filter by module">
+          <button class="module-chip active" type="button" data-module="">All APIs</button>
         </div>
-      </div>
-      <div class="hero-panel" aria-label="Featured USDK modules">
-        <div class="panel-top"><span>USDK API</span><span class="status-dot">V15.5.01E</span></div>
-        <a href="kb.html?module=DeviceManager">
-          <span class="module-icon">DM</span><span><strong>DeviceManager</strong><small>Device identity, system controls and policy</small></span><b>→</b>
-        </a>
-        <a href="kb.html?module=DeviceManagerEx">
-          <span class="module-icon">DX</span><span><strong>DeviceManagerEx</strong><small>Extended device and security management</small></span><b>→</b>
-        </a>
-        <a href="kb.html?module=NetworkManagerEx">
-          <span class="module-icon">NX</span><span><strong>NetworkManagerEx</strong><small>Wi-Fi, APN and connectivity control</small></span><b>→</b>
-        </a>
-        <a href="kb.html?module=ApplicationManagerEx">
-          <span class="module-icon">AX</span><span><strong>ApplicationManagerEx</strong><small>Application lifecycle and permissions</small></span><b>→</b>
-        </a>
+        <div class="manual-result-row">
+          <span id="manual-result-count">Loading interfaces…</span>
+          <button id="reset-manual-filters" type="button">Reset filters</button>
+        </div>
       </div>
     </section>
 
-    <section class="knowledge-map">
-      <div class="section-heading">
-        <span class="eyebrow">Knowledge map</span>
-        <h2 data-i18n="browseTitle">One technical portal, built to grow.</h2>
-        <p data-i18n="browseText">USDK is available now. The remaining categories are ready for your next content batches.</p>
-      </div>
-      <div class="category-grid">
-        <a class="category-card active" href="kb.html">
-          <span class="card-index">01</span><h3>USDK API</h3><p>Complete interface reference extracted from V15.5.01E.</p><span class="card-link">Explore 395 APIs →</span>
-        </a>
-        <div class="category-card"><span class="card-index">02</span><h3>OEMConfig</h3><p>Managed configurations and version compatibility.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">03</span><h3>Ustage</h3><p>Provisioning profiles and deployment capabilities.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">04</span><h3>OTA</h3><p>Update interfaces, status codes and rollout guidance.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">05</span><h3>Battery</h3><p>Smart battery APIs, fields and protection strategies.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">06</span><h3>Scanner</h3><p>Barcode engine configuration and scanning workflows.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">07</span><h3>Security</h3><p>Device policy, permissions and hardening references.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">08</span><h3>MDM Compatibility</h3><p>SOTI, Omnissa, Intune and other platform notes.</p><span class="coming">Content ready to add</span></div>
-        <div class="category-card"><span class="card-index">09</span><h3>Known Issues</h3><p>Symptoms, affected versions and proven resolutions.</p><span class="coming">Content ready to add</span></div>
+    <section class="manual-content">
+      <div class="manual-shell">
+        <div class="api-card-grid" id="api-card-grid"></div>
+        <div class="manual-empty" id="manual-empty" hidden>
+          <strong>No matching API</strong>
+          <span>Try another keyword or module.</span>
+        </div>
+        <button class="load-more" id="load-more" type="button" hidden>Load more APIs</button>
       </div>
     </section>
   </main>
-
-  <footer>
-    <span>Urovo Technical Knowledge Base</span>
-    <span>Static documentation · GitHub Pages / Nginx ready</span>
-  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="app.js" defer></script>
 </body>
 </html>
