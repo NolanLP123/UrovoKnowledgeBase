@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Search and browse the Urovo USDK API reference.">
+  <title>USDK API Reference · Urovo Knowledge Base</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="knowledge-page">
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Urovo Technical Knowledge Base home">
+      <span class="brand-mark">U</span>
+      <span><strong>UROVO</strong><small>Technical Knowledge Base</small></span>
+    </a>
+    <div class="kb-search">
+      <label class="sr-only" for="kb-search-input">Search knowledge base</label>
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="kb-search-input" type="search" placeholder="Search API, signature or description…" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+    <div class="header-actions">
+      <button class="language-button" type="button" data-language-toggle>中文</button>
+      <a class="header-link" href="index.html">Home</a>
+    </div>
+  </header>
+
+  <main class="kb-layout">
+    <aside class="category-sidebar" aria-label="Knowledge categories">
+      <div class="sidebar-title">KNOWLEDGE BASE</div>
+      <button class="category-nav active" type="button" data-category="USDK API"><span>USDK API</span><b id="usdk-count">395</b></button>
+      <button class="category-nav disabled" type="button" disabled><span>OEMConfig</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>Ustage</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>OTA</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>Battery</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>Scanner</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>Security</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>MDM Compatibility</span><small>Soon</small></button>
+      <button class="category-nav disabled" type="button" disabled><span>Known Issues</span><small>Soon</small></button>
+      <div class="sidebar-note">
+        <strong>Source version</strong>
+        <span>USDK V15.5.01E</span>
+      </div>
+    </aside>
+
+    <section class="results-panel" aria-label="API list">
+      <div class="results-header">
+        <div><span class="eyebrow">USDK API</span><h1>Interface reference</h1></div>
+        <button id="mobile-filters" class="filter-button" type="button">Filters</button>
+      </div>
+      <div class="filters" id="filters">
+        <label>Module
+          <select id="module-filter"><option value="">All modules</option></select>
+        </label>
+        <label>Status
+          <select id="status-filter"><option value="">All statuses</option><option>Active</option><option>Deprecated</option></select>
+        </label>
+      </div>
+      <div class="result-summary"><span id="result-count">Loading interfaces…</span><button id="clear-filters" type="button">Clear filters</button></div>
+      <div class="api-list" id="api-list" role="listbox" aria-label="USDK APIs"></div>
+      <div class="empty-state" id="empty-state" hidden><strong>No matching API</strong><span>Try another keyword or clear the filters.</span></div>
+    </section>
+
+    <article class="detail-panel" id="detail-panel" aria-live="polite">
+      <div class="detail-placeholder">
+        <span class="placeholder-mark">API</span>
+        <h2>Select an interface</h2>
+        <p>Choose an API from the list to view its signature, description, parameters and return value.</p>
+      </div>
+    </article>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js" defer></script>
+</body>
+</html>
